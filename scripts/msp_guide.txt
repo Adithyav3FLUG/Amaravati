@@ -1,0 +1,47 @@
+# Linking the resource & cost-loaded L3 schedule to Microsoft Project – step by step
+Menu paths and field names follow MS Project 2016 / 2019 / 2021 / Project Online Desktop (Import Wizard for Excel); they were prepared from the product documentation, not run in a live MS Project session here. The workbook sheets used are MSP_Import_Resources and MSP_Import_Tasks.
+## A. Prepare the workbook (2 min)
+1. Open Golf_Homes_PhII_L3_Schedule_Resource_Cost_Loaded.xlsx in Excel, press F9 (Formulas > Calculate Now) and Save. MS Project reads the saved values, not the formulas, so re-save after any change to rates, budgets or durations.
+2. Close the workbook in Excel (the Import Wizard cannot read a file that is open).
+## B. Create the project shell and options (5 min)
+3. MS Project > File > New > Blank Project. Do not type any task yet – the imported rows must become task IDs 1…2758 so that the Predecessors column resolves.
+4. Project > Project Information: Start date = 01-01-2024, Schedule from = Project Start Date, Calendar = Standard. OK.
+5. File > Options > Schedule: Week starts on Monday; Hours per day = 8; Hours per week = 56; Days per month = 30; New tasks created = Auto Scheduled; Duration is entered in = Days; Work is entered in = Hours; Default task type = Fixed Units; untick "New tasks are effort driven". These make "20 days" = 20 calendar days of 8 h, exactly as the Excel schedule counts them.
+6. File > Options > Schedule > Calculation options: Default fixed costs accrual = Prorated.  File > Options > Display: Currency = ₹ (INR), decimal digits = 0.
+7. File > Options > Advanced > Earned Value options: Default task Earned Value method = % Complete; Baseline for Earned Value calculations = Baseline (Baseline 0).  In the same Advanced page: leave "Calculate multiple critical paths" unticked and set "Tasks are critical if slack is less than or equal to 0 days".
+## C. Build the three calendars (10 min)
+8. Project > Change Working Time > For calendar: Standard > Work Weeks tab > [Default] > Details… > select Sunday to Saturday > "Set day(s) to these specific working times": 08:00–12:00 and 13:00–17:00. OK. (7-day, 8 h site calendar used by the schedule.)
+9. Create New Calendar… > Name "GRAP-A Full Stop" > Make a copy of Standard. On the Exceptions tab add three exceptions, each "Nonworking": 16-11-2023 to 15-01-2024; 16-11-2024 to 15-01-2025; 16-11-2025 to 15-01-2026. (Category-A outdoor/dust work stops completely during the CAQM GRAP window.)
+10. Create New Calendar… > Name "GRAP-B Derated 60%" > copy of Standard. Add the same three date ranges as exceptions, but set them to "Working times": 08:00–12:00 and 13:00–13:48 (= 4.8 h = 60 % of 8 h). Indoor/covered trades keep working at 60 % output, which stretches their elapsed duration exactly as in the Excel model.
+11. Names must match the Task Calendar column exactly: Standard, GRAP-A Full Stop, GRAP-B Derated 60%.
+## D. Import the resources (5 min)
+12. File > Open > file type "Excel Workbook (*.xlsx)" > select the workbook > Open. The Import Wizard starts > Next > "New map" > Next > "Append the data to the active project" > Next.
+13. Map Options: tick Resources only; tick "Import includes headers". Next.
+14. Resource Mapping: Source worksheet = MSP_Import_Resources (headers in row 1). Map every column to the field of the same name (Resource Name→Name, Type→Type, Material Label→Material Label, Initials→Initials, Group→Group, Max. Units→Max Units, Std. Rate→Standard Rate, Ovt. Rate→Overtime Rate, Cost/Use→Cost Per Use, Accrue At→Accrue At, Base Calendar→Base Calendar, Code→Code). Next > Save Map as "GH_Resources" > Finish.
+15. View > Resource Sheet: check {NRES} resources, material resources show a label (t, cum, sqm, each, kg) and work rates read like ₹950.00/day.
+16. Paste alternative: in Excel select MSP_Import_Resources!A2:L{RL} > Copy; in MS Project open Resource Sheet, click the first Resource Name cell > Paste. The sheet columns are already in Resource Sheet "Entry" table order.
+## E. Import the tasks with logic, calendars, resources and fixed cost (10 min)
+17. File > Open > the same workbook > Next > "New map" > "Append the data to the active project" > Map Options: tick Tasks only, "Import includes headers". Next.
+18. Task Mapping: Source worksheet = MSP_Import_Tasks (headers in row 1). Map: Outline Level→Outline Level; Name→Name; Duration→Duration; Predecessors→Predecessors; Resource Names→Resource Names; Fixed Cost→Fixed Cost; Fixed Cost Accrual→Fixed Cost Accrual; Task Calendar→Task Calendar; Text1 (WBS)→Text1; Text2 (GRAP category)→Text2; Text3 (Crew composition)→Text3; Text4 (Activity code)→Text4; Number1 (Budget ₹)→Number1. Set "ID (check only)" to (not mapped). Do NOT map Start/Finish – importing dates would create Start-No-Earlier-Than constraints and break the logic.
+19. Next > Save Map as "GH_Tasks" > Finish. Allow 1–3 minutes for 2,758 tasks. If asked about automatically adding resources, answer No – every name already exists from step 12.
+20. Resource Names syntax used: work resources "Bar Bender[5400%]" = 54 persons for the task duration; material resources "Rebar Fe500D[53.76]" = 53.76 t consumed. If your Windows list separator is ";" instead of ",", replace commas in column F before import (Excel: Find "," Replace ";" in that column only). If Options > Schedule shows assignment units as decimal, the "%" values are still accepted.
+## F. Verify the link (5 min)
+21. Format > tick Outline Number, Project Summary Task. The project summary must show Start 01-01-2024 and Finish ≈ 14-05-2026 (± 1–2 days: MS Project lets a successor start part-way through a day in the 4.8 h GRAP-B window, Excel rounds to the next day).
+22. Insert columns Text1, Total Slack, Cost, Fixed Cost, Number1 and Task Calendar. Row 1 (project root) Cost must equal Cost_Summary!F12 × 10^7 (BAC ₹1,635.8 Cr). Spot-check a floor task: Cost = Labour + Equipment + Material + Fixed from L3_Schedule cols Q–U.
+23. View > Resource Sheet: Total cost per resource = Resources!M. View > Resource Usage shows day-by-day units; View > Resource Graph (Peak Units) reproduces the Labour_Histogram sheet.
+24. Task > Inspect on a few GRAP-A tasks (e.g. ID 1797 KAVERI Floor 01 rebar) – the driver should be the calendar exception: work resumes 16-01-2025.
+## G. Baseline, critical path and cash flow
+25. Project > Set Baseline > Set baseline = Baseline, For = Entire project > OK (before any progress is entered). This freezes Baseline Start/Finish/Work/Cost = BAC and the time-phased PV curve.
+26. Critical path: Gantt Chart Format > tick Critical Tasks and Slack; View > Filter > Critical. Expect 7 zero-float tasks (T12 upper-zone façade → flooring → painting → joinery → OC → handover → completion). Use Task > Task Path > Driving Predecessors on ID 2758 to highlight the 197-activity driving chain (mobilisation → Zone-3 substructure → T09/T10/T11 staggered starts → T12 34-floor MIVAN cycle → T12 finishing → handover).
+27. Cash flow: Report > Costs > Cash Flow (or View > Task Usage, Format > Details > Cost + Cumulative Cost, timescale Months) – export to Excel with Report > Visual Reports > Baseline Cost Report to plot the S-curve; compare with CashFlow_S-Curve.
+## H. Status update and Earned Value each month
+28. Project > Project Information > Status Date = last day of the month (e.g. 30-04-2025).
+29. Enter progress: Task > Update Tasks (% Complete / Actual Start / Actual Finish) or insert % Complete and Physical % Complete columns. Enter actual costs through Resource Usage (Actual Cost) or, for subcontract lump sums, Actual Fixed Cost via Actual Cost column.
+30. View > Tables > More Tables > Earned Value: BCWS (PV), BCWP (EV), ACWP (AC), SV, CV, EAC, BAC, VAC. Earned Value Cost Indicators table gives CPI, TCPI; Earned Value Schedule Indicators gives SPI.
+31. Report > Costs > Earned Value Report / Earned Value Over Time plots PV, EV, AC curves – compare with the EVM sheet (EAC = BAC/CPI, ETC = EAC − AC, VAC = BAC − EAC).
+32. Change control: re-baseline only approved variations into Baseline 1 (Project > Set Baseline > Baseline 1) so Baseline 0 remains the contract reference.
+## I. Two-way sync (keeping Excel and MSP aligned)
+33. MSP → Excel: File > Save As > Excel Workbook > Export wizard > "Selected Data" > Tasks: Unique ID, ID, Text1, Start, Finish, Total Slack, Cost, BCWS, BCWP, ACWP. Paste Start/Finish/Total Slack back into L3_Schedule cols E, F, X by ID for reporting.
+34. Excel → MSP (rate or budget changes): edit blue inputs, recalc and save; in MSP use File > Open > Import Wizard > "Merge the data into the active project" with the saved maps, choosing Name (or Text1 = WBS) as the merge key and mapping only Fixed Cost / Number1 (tasks) or Standard Rate (resources).
+Note: the MS Project calendar route reproduces the Excel dates exactly for GRAP-A (full stop) tasks; GRAP-B tasks may finish up to one day earlier because MS Project schedules in hours rather than whole days.
+Tip: save the file as Golf_Homes_PhII_L3_R1.mpp before setting the baseline, then again after step 25.
